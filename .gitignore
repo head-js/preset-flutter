@@ -173,8 +173,6 @@ Pods/
 # Files and directories created by pub
 .packages
 .pub/
-# If you're building an application, you may want to check-in your pubspec.lock
-pubspec.lock
 
 # Directory created by dartdoc
 # If you don't generate documentation locally you can remove this line.
@@ -347,3 +345,22 @@ playground.xcworkspace
 build/
 
 # End of https://www.gitignore.io/api/dart,swift,xcode,android,intellij,cocoapods,objective-c,androidstudio
+
+### Flutter ###
+# Flutter/Dart specific
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.flutter-sync
+
+# IDE
+.idea/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# macOS
+.AppleDouble
+.LSOverride
