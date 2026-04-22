@@ -8,7 +8,7 @@ plugins {
 android {
     namespace = "com.lisitede.preset.preset"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    ndkVersion = flutter.ndkVersion // NDK 26.3.11579264 (由 Flutter SDK 3.29.3 决定，属于被动版本)
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

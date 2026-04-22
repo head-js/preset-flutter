@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 
 void main() {
@@ -55,6 +58,48 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
+  List<ConnectivityResult> _connectivityResult = [ConnectivityResult.none];
+  StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkConnectivity();
+    _connectivitySubscription = Connectivity().onConnectivityChanged.listen(
+      _updateConnectivity,
+    );
+  }
+
+  @override
+  void dispose() {
+    _connectivitySubscription?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _checkConnectivity() async {
+    final result = await Connectivity().checkConnectivity();
+    setState(() {
+      _connectivityResult = result;
+    });
+    debugPrint('Connectivity: ${_connectivityResultText(result)}');
+  }
+
+  void _updateConnectivity(List<ConnectivityResult> result) {
+    setState(() {
+      _connectivityResult = result;
+    });
+    debugPrint('Connectivity changed: ${_connectivityResultText(result)}');
+  }
+
+  String _connectivityResultText(List<ConnectivityResult> result) {
+    if (result.contains(ConnectivityResult.wifi)) return 'WiFi';
+    if (result.contains(ConnectivityResult.mobile)) return 'Mobile';
+    if (result.contains(ConnectivityResult.ethernet)) return 'Ethernet';
+    if (result.contains(ConnectivityResult.bluetooth)) return 'Bluetooth';
+    if (result.contains(ConnectivityResult.vpn)) return 'VPN';
+    if (result.contains(ConnectivityResult.none)) return 'None';
+    return 'Other';
+  }
 
   void _incrementCounter() {
     setState(() {
@@ -104,6 +149,12 @@ class _MyHomePageState extends State<MyHomePage> {
           // wireframe for each widget.
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
+            const Text('Network Connectivity Test - connectivity_plus@6.0.5'),
+            Text(
+              'Connectivity: ${_connectivityResultText(_connectivityResult)}',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 32),
             const Text('You have pushed the button this many times:'),
             Text(
               '$_counter',
