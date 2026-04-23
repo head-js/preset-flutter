@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 
 void main() {
@@ -60,6 +61,7 @@ class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
   List<ConnectivityResult> _connectivityResult = [ConnectivityResult.none];
   StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
+  AndroidDeviceInfo? _androidDeviceInfo;
 
   @override
   void initState() {
@@ -68,6 +70,7 @@ class _MyHomePageState extends State<MyHomePage> {
     _connectivitySubscription = Connectivity().onConnectivityChanged.listen(
       _updateConnectivity,
     );
+    _getDeviceInfo();
   }
 
   @override
@@ -89,6 +92,20 @@ class _MyHomePageState extends State<MyHomePage> {
       _connectivityResult = result;
     });
     debugPrint('Connectivity changed: ${_connectivityResultText(result)}');
+  }
+
+  Future<void> _getDeviceInfo() async {
+    final deviceInfo = DeviceInfoPlugin();
+    final androidInfo = await deviceInfo.androidInfo;
+    setState(() {
+      _androidDeviceInfo = androidInfo;
+    });
+    debugPrint('Device Info - Brand: ${androidInfo.brand}');
+    debugPrint('Device Info - Model: ${androidInfo.model}');
+    debugPrint('Device Info - Android Version: ${androidInfo.version.release}');
+    debugPrint('Device Info - SDK Int: ${androidInfo.version.sdkInt}');
+    debugPrint('Device Info - Manufacturer: ${androidInfo.manufacturer}');
+    debugPrint('Device Info - Device: ${androidInfo.device}');
   }
 
   String _connectivityResultText(List<ConnectivityResult> result) {
@@ -152,6 +169,20 @@ class _MyHomePageState extends State<MyHomePage> {
             const Text('Network Connectivity Test - connectivity_plus@6.0.5'),
             Text(
               'Connectivity: ${_connectivityResultText(_connectivityResult)}',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 32),
+            const Text('Device Info Test - device_info_plus@10.1.2'),
+            Text(
+              'Brand: ${_androidDeviceInfo?.brand ?? "Loading..."}',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            Text(
+              'Model: ${_androidDeviceInfo?.model ?? "Loading..."}',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            Text(
+              'Android Version: ${_androidDeviceInfo?.version.release ?? "Loading..."}',
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 32),
