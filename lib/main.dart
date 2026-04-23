@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 void main() {
   runApp(const MyApp());
@@ -62,6 +63,7 @@ class _MyHomePageState extends State<MyHomePage> {
   List<ConnectivityResult> _connectivityResult = [ConnectivityResult.none];
   StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
   AndroidDeviceInfo? _androidDeviceInfo;
+  PackageInfo? _packageInfo;
 
   @override
   void initState() {
@@ -71,6 +73,7 @@ class _MyHomePageState extends State<MyHomePage> {
       _updateConnectivity,
     );
     _getDeviceInfo();
+    _getPackageInfo();
   }
 
   @override
@@ -106,6 +109,17 @@ class _MyHomePageState extends State<MyHomePage> {
     debugPrint('Device Info - SDK Int: ${androidInfo.version.sdkInt}');
     debugPrint('Device Info - Manufacturer: ${androidInfo.manufacturer}');
     debugPrint('Device Info - Device: ${androidInfo.device}');
+  }
+
+  Future<void> _getPackageInfo() async {
+    final packageInfo = await PackageInfo.fromPlatform();
+    setState(() {
+      _packageInfo = packageInfo;
+    });
+    debugPrint('Package Info - App Name: ${packageInfo.appName}');
+    debugPrint('Package Info - Package Name: ${packageInfo.packageName}');
+    debugPrint('Package Info - Version: ${packageInfo.version}');
+    debugPrint('Package Info - Build Number: ${packageInfo.buildNumber}');
   }
 
   String _connectivityResultText(List<ConnectivityResult> result) {
@@ -183,6 +197,24 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
             Text(
               'Android Version: ${_androidDeviceInfo?.version.release ?? "Loading..."}',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 32),
+            const Text('Package Info Test - package_info_plus@8.3.1'),
+            Text(
+              'App Name: ${_packageInfo?.appName ?? "Loading..."}',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            Text(
+              'Package Name: ${_packageInfo?.packageName ?? "Loading..."}',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            Text(
+              'Version: ${_packageInfo?.version ?? "Loading..."}',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            Text(
+              'Build Number: ${_packageInfo?.buildNumber ?? "Loading..."}',
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 32),
