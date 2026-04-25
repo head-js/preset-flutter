@@ -1,0 +1,8 @@
+# Task Metadata
+- appId: flutter-app
+- planId: PLAN-001
+- phaseId: PHASE-200
+- taskId: TASK-160
+- taskName: 添加 retrofit HTTP 请求库并验证 POST 请求能力
+- taskStatus: PASS
+- $source: "backstage-gitea agent GET /flutter-app/PLAN-001/PHASE-200/TASK-160"

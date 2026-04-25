@@ -1,0 +1,8 @@
+# Phase Metadata
+- appId: flutter-app
+- planId: PLAN-001
+- phaseId: PHASE-200
+- phaseName: 核心插件集成验证
+- phaseStatus: IN_PROGRESS
+- $source: "backstage-gitea agent HEAD /flutter-app/PLAN-001/PHASE-200"
+
