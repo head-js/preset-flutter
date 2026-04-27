@@ -5,6 +5,7 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:preset/providers/auth_provider.dart';
 import 'package:preset/providers/connectivity_provider.dart';
 import 'package:preset/providers/http_post_provider.dart';
 import 'package:preset/providers/shared_prefs_provider.dart';
@@ -20,6 +21,7 @@ class HomePage extends HookConsumerWidget {
     final connectivityAsync = ref.watch(connectivityProvider);
     final httpPostState = ref.watch(httpPostNotifierProvider);
     final prefs = ref.watch(sharedPreferencesProvider);
+    final authState = ref.watch(authNotifierProvider);
 
     final androidDeviceInfo = useState<AndroidDeviceInfo?>(null);
     final packageInfo = useState<PackageInfo?>(null);
@@ -79,12 +81,35 @@ class HomePage extends HookConsumerWidget {
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: const Text('Plugin Integration Demo'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: () {
-              context.go('/settings');
-            },
-          ),
+          if (authState.isLoggedIn)
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: Text(authState.username ?? 'user'),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.logout),
+                  onPressed: () {
+                    ref.read(authNotifierProvider.notifier).logout();
+                  },
+                ),
+                IconButton(
+                  icon: const Icon(Icons.settings),
+                  onPressed: () {
+                    context.go('/settings');
+                  },
+                ),
+              ],
+            )
+          else
+            TextButton(
+              onPressed: () {
+                context.go('/login');
+              },
+              child: const Text('Login'),
+            ),
         ],
       ),
       body: Column(
