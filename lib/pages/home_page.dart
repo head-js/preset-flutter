@@ -7,18 +7,23 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:preset/providers/connectivity_provider.dart';
 import 'package:preset/providers/http_post_provider.dart';
+import 'package:preset/providers/shared_prefs_provider.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 class HomePage extends HookConsumerWidget {
   const HomePage({super.key});
 
+  static const _counterKey = 'shared_prefs_counter';
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final connectivityAsync = ref.watch(connectivityProvider);
     final httpPostState = ref.watch(httpPostNotifierProvider);
+    final prefs = ref.watch(sharedPreferencesProvider);
 
     final androidDeviceInfo = useState<AndroidDeviceInfo?>(null);
     final packageInfo = useState<PackageInfo?>(null);
+    final counter = useState<int>(prefs.getInt(_counterKey) ?? 0);
 
     final webViewController = useMemoized(() {
       return WebViewController()
@@ -146,6 +151,40 @@ class HomePage extends HookConsumerWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'shared_preferences@2.5.3: ${counter.value}',
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.remove),
+                        onPressed: () async {
+                          final newVal = counter.value - 1;
+                          await prefs.setInt(_counterKey, newVal);
+                          counter.value = newVal;
+                        },
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.add),
+                        onPressed: () async {
+                          final newVal = counter.value + 1;
+                          await prefs.setInt(_counterKey, newVal);
+                          counter.value = newVal;
+                        },
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.delete),
+                        onPressed: () async {
+                          await prefs.remove(_counterKey);
+                          counter.value = 0;
+                        },
+                      ),
+                    ],
+                  ),
                   const Spacer(),
                   Row(
                     children: [
