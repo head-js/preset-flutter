@@ -43,6 +43,9 @@ dependencies:
   dio: 5.9.2
   retrofit: 4.6.0
   json_annotation: 4.9.0
+  flutter_riverpod: 2.6.1
+  flutter_hooks: 0.21.2
+  hooks_riverpod: 2.6.1
 
 dev_dependencies:
   flutter_test:

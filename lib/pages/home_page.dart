@@ -1,163 +1,74 @@
-import 'dart:async';
-
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:device_info_plus/device_info_plus.dart';
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:preset/api/api_client.dart';
+import 'package:preset/providers/connectivity_provider.dart';
+import 'package:preset/providers/http_post_provider.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
-class HomePage extends StatefulWidget {
+class HomePage extends HookConsumerWidget {
   const HomePage({super.key});
 
   @override
-  State<HomePage> createState() => _HomePageState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final connectivityAsync = ref.watch(connectivityProvider);
+    final httpPostState = ref.watch(httpPostNotifierProvider);
 
-class _HomePageState extends State<HomePage> {
-  List<ConnectivityResult> _connectivityResult = [ConnectivityResult.none];
-  StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
-  AndroidDeviceInfo? _androidDeviceInfo;
-  PackageInfo? _packageInfo;
-  late final WebViewController _webViewController;
-  late final Dio _dio;
-  late final ApiClient _apiClient;
-  String _httpResponse = '';
-  bool _isLoading = false;
+    final androidDeviceInfo = useState<AndroidDeviceInfo?>(null);
+    final packageInfo = useState<PackageInfo?>(null);
 
-  @override
-  void initState() {
-    super.initState();
-    _initConnectivity();
-    _getDeviceInfo();
-    _getPackageInfo();
-    _initWebView();
-    _initApiClient();
-  }
-
-  @override
-  void dispose() {
-    _connectivitySubscription?.cancel();
-    super.dispose();
-  }
-
-  Future<void> _initConnectivity() async {
-    final result = await Connectivity().checkConnectivity();
-    setState(() {
-      _connectivityResult = result;
-    });
-    _connectivitySubscription = Connectivity().onConnectivityChanged.listen((
-      result,
-    ) {
-      setState(() {
-        _connectivityResult = result;
-      });
-    });
-  }
-
-  Future<void> _getDeviceInfo() async {
-    final deviceInfo = DeviceInfoPlugin();
-    final androidInfo = await deviceInfo.androidInfo;
-    setState(() {
-      _androidDeviceInfo = androidInfo;
-    });
-  }
-
-  Future<void> _getPackageInfo() async {
-    final packageInfo = await PackageInfo.fromPlatform();
-    setState(() {
-      _packageInfo = packageInfo;
-    });
-  }
-
-  void _initWebView() {
-    _webViewController =
-        WebViewController()
-          ..setJavaScriptMode(JavaScriptMode.unrestricted)
-          ..setNavigationDelegate(
-            NavigationDelegate(
-              onProgress: (int progress) {
-                debugPrint('WebView loading: $progress%');
-              },
-              onPageStarted: (String url) {
-                debugPrint('Page started: $url');
-              },
-              onPageFinished: (String url) {
-                debugPrint('Page finished: $url');
-              },
-              onWebResourceError: (WebResourceError error) {
-                debugPrint(
-                  'WebView error: ${error.description} (code: ${error.errorCode})',
-                );
-              },
-            ),
-          )
-          ..loadRequest(Uri.parse('https://www.baidu.com'));
-  }
-
-  void _initApiClient() {
-    _dio = Dio();
-    _dio.options.headers['Content-Type'] = 'application/json';
-    _apiClient = ApiClient(_dio);
-  }
-
-  Future<void> _sendPostRequest() async {
-    setState(() {
-      _isLoading = true;
-      _httpResponse = '';
+    final webViewController = useMemoized(() {
+      return WebViewController()
+        ..setJavaScriptMode(JavaScriptMode.unrestricted)
+        ..setNavigationDelegate(
+          NavigationDelegate(
+            onProgress: (int progress) {
+              debugPrint('WebView loading: $progress%');
+            },
+            onPageStarted: (String url) {
+              debugPrint('Page started: $url');
+            },
+            onPageFinished: (String url) {
+              debugPrint('Page finished: $url');
+            },
+            onWebResourceError: (WebResourceError error) {
+              debugPrint(
+                'WebView error: ${error.description} (code: ${error.errorCode})',
+              );
+            },
+          ),
+        )
+        ..loadRequest(Uri.parse('https://www.baidu.com'));
     });
 
-    try {
-      final response = await _apiClient.postTest({
-        'message': 'Hello from Flutter!',
-        'timestamp': DateTime.now().toIso8601String(),
-        'platform': 'Android',
+    useEffect(() {
+      final deviceInfo = DeviceInfoPlugin();
+      deviceInfo.androidInfo.then((info) {
+        androidDeviceInfo.value = info;
       });
 
-      setState(() {
-        _isLoading = false;
-        _httpResponse =
-            'Success!\n'
-            'URL: ${response.data.url}\n'
-            'Origin: ${response.data.origin}\n'
-            'Data: ${response.data.json}';
+      PackageInfo.fromPlatform().then((info) {
+        packageInfo.value = info;
       });
 
-      debugPrint('HTTP POST Response: ${response.data.toJson()}');
-    } on DioException catch (e) {
-      setState(() {
-        _isLoading = false;
-        _httpResponse =
-            'Error: ${e.type.toString()}\n'
-            'Message: ${e.message}\n'
-            'StatusCode: ${e.response?.statusCode ?? "-"}';
-      });
-      debugPrint('DioException: ${e.toString()}');
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-        _httpResponse = 'Error: ${e.toString()}';
-      });
-      debugPrint('Exception: ${e.toString()}');
+      return null;
+    }, []);
+
+    String connectivityText(List<ConnectivityResult> result) {
+      if (result.contains(ConnectivityResult.wifi)) {
+        return 'WiFi';
+      } else if (result.contains(ConnectivityResult.mobile)) {
+        return 'Mobile';
+      } else if (result.contains(ConnectivityResult.none)) {
+        return 'None';
+      } else {
+        return 'Other';
+      }
     }
-  }
 
-  String _connectivityText() {
-    if (_connectivityResult.contains(ConnectivityResult.wifi)) {
-      return 'WiFi';
-    } else if (_connectivityResult.contains(ConnectivityResult.mobile)) {
-      return 'Mobile';
-    } else if (_connectivityResult.contains(ConnectivityResult.none)) {
-      return 'None';
-    } else {
-      return 'Other';
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
@@ -174,30 +85,48 @@ class _HomePageState extends State<HomePage> {
       body: Column(
         children: [
           Expanded(
-            flex: 1,
+            flex: 7,
             child: Container(
               padding: const EdgeInsets.all(16),
               color: Colors.grey.shade100,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('connectivity_plus@6.0.5: ${_connectivityText()}'),
+                  Text(
+                    'connectivity_plus@6.0.5: ${connectivityAsync.when(
+                      data: (data) => connectivityText(data),
+                      loading: () => 'Checking...',
+                      error: (e, _) => 'Error: $e',
+                    )}',
+                  ),
                   const SizedBox(height: 8),
                   Text(
-                    'device_info_plus@11.5.0: ${_androidDeviceInfo?.brand ?? "-"} ${_androidDeviceInfo?.model ?? "-"}',
+                    'device_info_plus@11.5.0: ${androidDeviceInfo.value?.brand ?? "-"} ${androidDeviceInfo.value?.model ?? "-"}',
                   ),
                   Text(
-                    'Android: ${_androidDeviceInfo?.version.release ?? "-"}',
+                    'Android: ${androidDeviceInfo.value?.version.release ?? "-"}',
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'package_info_plus@8.3.1: ${_packageInfo?.appName ?? "-"} v${_packageInfo?.version ?? "-"}',
+                    'package_info_plus@8.3.1: ${packageInfo.value?.appName ?? "-"} v${packageInfo.value?.version ?? "-"}',
                   ),
                   const SizedBox(height: 12),
                   ElevatedButton(
-                    onPressed: _isLoading ? null : _sendPostRequest,
+                    onPressed:
+                        httpPostState.isLoading
+                            ? null
+                            : () {
+                              ref
+                                  .read(httpPostNotifierProvider.notifier)
+                                  .sendPost({
+                                'message': 'Hello from Flutter!',
+                                'timestamp':
+                                    DateTime.now().toIso8601String(),
+                                'platform': 'Android',
+                              });
+                            },
                     child:
-                        _isLoading
+                        httpPostState.isLoading
                             ? const SizedBox(
                               width: 16,
                               height: 16,
@@ -207,11 +136,11 @@ class _HomePageState extends State<HomePage> {
                               'HTTP POST Test (dio@5.9.2 + retrofit@4.6.0)',
                             ),
                   ),
-                  if (_httpResponse.isNotEmpty)
+                  if (httpPostState.response.isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.only(top: 8),
                       child: Text(
-                        _httpResponse,
+                        httpPostState.response,
                         style: const TextStyle(fontSize: 12),
                         maxLines: 3,
                         overflow: TextOverflow.ellipsis,
@@ -236,11 +165,11 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
           Expanded(
-            flex: 2,
+            flex: 3,
             child: Container(
               width: double.infinity,
               decoration: BoxDecoration(border: Border.all(color: Colors.grey)),
-              child: WebViewWidget(controller: _webViewController),
+              child: WebViewWidget(controller: webViewController),
             ),
           ),
         ],
